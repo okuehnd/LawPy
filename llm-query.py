@@ -40,26 +40,27 @@ def extract_keywords(query: str) -> set[str]:
     Returns:
         set: A set of lowercase legal keywords
     """
+
     prompt = f"""Role: You are a case-law search engine assistant.
 
-Task: From the user's question, extract 5-10 key legal search terms.
+    Task: From the user's question, extract 5-10 key legal search terms.
 
-Requirements:
-- Return ONLY a JSON array of lowercase keywords
-- No explanations or other text
-- Each term should be specific and useful for legal search
-- Avoid generic terms like "case" or "law" unless part of a specific phrase
+    Requirements:
+    - Return ONLY a JSON array of lowercase keywords
+    - No explanations or other text
+    - Each term should be specific and useful for legal search
+    - Avoid generic terms like "case" or "law" unless part of a specific phrase
 
-Input: {query}"""
+    Input: {query}"""
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4",  # or your preferred model
+            model="gpt-4o-mini",  # or your preferred model
             messages=[
                 {"role": "system", "content": "You are a legal keyword extractor. Respond only with a JSON array of keywords."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.3  # Lower temperature for more consistent output
+            temperature=0.4  # Lower temperature for more consistent output
         )
         
         # Parse the JSON array response
