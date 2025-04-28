@@ -55,16 +55,30 @@ def extract_keywords(query: str) -> set[str]:
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4o-mini",  # or your preferred model
+            model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a legal keyword extractor. Respond only with a JSON array of keywords."},
+                {"role": "system", "content": "You are a legal keyword extractor. Respond only with a JSON object containing an array of keywords under the 'keywords' key."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.4  # Lower temperature for more consistent output
         )
         
-        # Parse the JSON array response
-        keywords = json.loads(response.choices[0].message.content)
+        # Get the response content
+        content = response.choices[0].message.content
+        print(f"Raw response: {content}")
+        
+        # Parse the JSON response
+        response_data = json.loads(content)
+        
+        # Extract keywords from the response
+        if isinstance(response_data, dict) and 'keywords' in response_data:
+            keywords = response_data['keywords']
+        elif isinstance(response_data, list):
+            keywords = response_data
+        else:
+            print("Unexpected response format. Using empty set.")
+            return set()
+            
         return set(keywords)  # Convert to set to remove any duplicates
         
     except Exception as e:
