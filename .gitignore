@@ -1,10 +1,30 @@
-#Virtual Environments
-lawvenv/
-venv/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
 
-#Databases
+# Virtual Environment
+.env
+.venv
+env/
+venv/
+ENV/
+lawvenv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db 
+
+# Database
 db.sqlite3
 
-#other
+# Data
+data/
+
+# Other
 et
 h

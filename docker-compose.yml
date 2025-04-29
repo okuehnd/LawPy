@@ -1,0 +1,41 @@
+services:
+  mongodb:
+    build:
+      context: .
+      dockerfile: Dockerfile.mongodb
+    container_name: lawpy-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./data:/data/import
+      - mongodb_data:/data/db
+      - ./mongodb-init:/docker-entrypoint-initdb.d
+    networks:
+      - lawpy-network
+    restart: unless-stopped
+    entrypoint: [ "/usr/local/bin/docker-entrypoint.sh" ]
+    command: "mongod --bind_ip_all"
+
+  # Frontend service - commented out for now
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - ./frontend:/app
+  #   depends_on:
+  #     - mongodb
+  #   networks:
+  #     - lawpy-network
+  #   environment:
+  #     - MONGODB_URI=mongodb://mongodb:27017/lawpy
+
+networks:
+  lawpy-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local 
