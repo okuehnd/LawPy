@@ -1,0 +1,17 @@
+FROM mongo:latest
+
+# Install MongoDB Database Tools
+RUN apt-get update && apt-get install -y wget gnupg
+RUN wget -qO - https://www.mongodb.org/static/pgp/server-7.0.asc | apt-key add -
+RUN echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+RUN apt-get update && apt-get install -y mongodb-database-tools
+
+# Set up environment
+ENV MONGO_INITDB_DATABASE=lawpy
+
+# Copy initialization scripts
+COPY mongodb-init/01-import-data.sh /docker-entrypoint-initdb.d/
+COPY mongodb-init/02-create-indexes.js /docker-entrypoint-initdb.d/
+
+# Make sure the scripts are executable
+RUN chmod +x /docker-entrypoint-initdb.d/01-import-data.sh 
