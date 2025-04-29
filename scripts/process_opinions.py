@@ -11,13 +11,12 @@ import json
 import gc
 from bson import ObjectId
 
-def process_batch(df, neutral_legal_terms):
+def process_batch(df):
     """
     Process a batch of documents to extract keywords and create postings.
     
     Args:
         df (DataFrame): PySpark DataFrame containing document text
-        neutral_legal_terms (list): List of legal terms to exclude from keywords
         
     Returns:
         list: List of keyword postings with document IDs and counts
@@ -48,12 +47,11 @@ def process_batch(df, neutral_legal_terms):
     tokenizer = Tokenizer(inputCol="cleaned_text", outputCol="words")
     df = tokenizer.transform(df)
     
-    # Remove stop words and neutral legal terms
+    # Remove standard stop words only (not neutral legal terms)
     from pyspark.ml.feature import StopWordsRemover
     remover = StopWordsRemover(inputCol="words", outputCol="filtered_words")
     standard_stop_words = StopWordsRemover.loadDefaultStopWords("english")
-    all_stop_words = standard_stop_words + neutral_legal_terms
-    remover.setStopWords(all_stop_words)
+    remover.setStopWords(standard_stop_words)
     df = remover.transform(df)
     
     # Generate n-grams for phrase matching
@@ -69,12 +67,12 @@ def process_batch(df, neutral_legal_terms):
     
     # Create postings for single words with frequency counts
     word_postings = df.select(
-        col("uid"),
+        col("doc_id"),
         explode("filtered_words").alias("keyword")
     ).filter(
         (length("keyword") > 1) &  # Remove single letters
         (col("keyword") != "")     # Remove empty strings
-    ).groupBy("uid", "keyword").count()
+    ).groupBy("doc_id", "keyword").count()
     
     # Collect and clear memory
     word_postings_list = word_postings.collect()
@@ -84,13 +82,13 @@ def process_batch(df, neutral_legal_terms):
     
     # Create postings for bigrams (2-word phrases)
     bigram_postings = df.select(
-        col("uid"),
+        col("doc_id"),
         explode("bigrams").alias("keyword")
     ).filter(
         (length("keyword") > 3) &   # Remove very short phrases
         (col("keyword") != "") &    # Remove empty strings
         (size(split("keyword", " ")) == 2)  # Ensure exactly two words
-    ).groupBy("uid", "keyword").count()
+    ).groupBy("doc_id", "keyword").count()
     
     # Collect and clear memory
     bigram_postings_list = bigram_postings.collect()
@@ -100,7 +98,7 @@ def process_batch(df, neutral_legal_terms):
     
     # Create postings for trigrams (3-word phrases)
     trigram_postings = df.select(
-        col("uid"),
+        col("doc_id"),
         explode("trigrams").alias("keyword")
     ).filter(
         (length("keyword") > 5) &   # Remove very short phrases
@@ -108,7 +106,7 @@ def process_batch(df, neutral_legal_terms):
         (size(split("keyword", " ")) == 3) &  # Ensure exactly three words
         (~col("keyword").rlike(r'\s{2,}')) &  # No multiple spaces
         (~col("keyword").rlike(r'\b[a-z]\b'))  # No single-letter words
-    ).groupBy("uid", "keyword").count()
+    ).groupBy("doc_id", "keyword").count()
     
     # Collect and clear memory
     trigram_postings_list = trigram_postings.collect()
@@ -128,61 +126,6 @@ def main():
     """
     # Set environment variables for Spark
     os.environ['PYSPARK_PYTHON'] = os.path.join(os.getcwd(), '.venv/bin/python')
-    
-    # Define neutral legal terms to exclude from keyword extraction
-    neutral_legal_terms = [
-        # Court system roles/actors
-        "court", "judge", "justice", "magistrate", "clerk", "bailiff",
-        "plaintiff", "defendant", "appellant", "respondent", "petitioner", "prosecutor",
-        "attorney", "lawyer", "counsel", "esquire", "barrister", "solicitor",
-        "witness", "expert", "jury", "juror",
-        
-        # Procedural legal terms
-        "motion", "hearing", "trial", "proceeding", "case", "matter", "action",
-        "appeal", "petition", "complaint", "pleading", "filing", "docket",
-        "evidence", "testimony", "exhibit", "affidavit", "deposition",
-        "brief", "memorandum", "argument", "objection", "overruled", "sustained",
-        "verdict", "judgment", "opinion", "decision", "order", "ruling",
-        "section", "paragraph", "statute", "regulation", "code", "article",
-        
-        # Citation and reference terms
-        "supra", "infra", "herein", "therein", "hereof", "thereof", 
-        "id", "ibid", "see", "cf", "eg", "ie",
-        "versus", "vs", "v", "et", "al", "seq",
-        "cite", "cited", "citing",
-        
-        # Common court procedure terms
-        "filed", "denied", "granted", "dismissed", "affirmed", "reversed", "remanded",
-        "sustained", "overruled", "admitted", "excluded",
-        "preliminary", "summary", "final",
-        
-        # Common generic legal text elements
-        "pursuant", "accordance", "relevant", "following", "foregoing",
-        "subject", "matter", "regarding", "concerning", "pertaining",
-        "review", "standard", "examination", "determine", "determined",
-        "issue", "issued", "fact", "facts", "allegation", "allegations",
-        "submit", "submitted", "contend", "contends", "claim", "claims",
-        "finding", "findings", "hold", "holding", "holds", "conclude", "concludes",
-        "dr", "honorable", "hon",
-        
-        # Non-substantive words that appear in legal documents
-        "page", "record", "transcript", "document", "documents", "file",
-        "paragraph", "chapter", "volume", "title", "part", "section", "subsection",
-        "amendment", "clause", "provision",
-        
-        # Additional neutral terms
-        "state", "york", "di", "also", "however", "therefore", "thus",
-        "said", "made", "may", "first", "second", "third", "last", "next",
-        "previous", "following", "above", "below", "here", "there", "this",
-        "that", "these", "those", "which", "what", "when", "where", "who",
-        "whom", "whose", "why", "how", "whether", "while", "although",
-        "because", "since", "unless", "until", "whenever", "wherever",
-        "misc", "relative", "rule", "march", "december", "july", "november",
-        "january", "february", "april", "may", "june", "august", "september",
-        "october", "suffolk", "county", "town", "city", "village", "borough",
-        "district", "region", "area", "zone", "territory", "jurisdiction",
-        "passalacqua", "muro", "service", "commission", "police",
-    ]
     
     # Initialize Spark session with optimized configuration
     spark = SparkSession.builder \
@@ -236,7 +179,7 @@ def main():
         
         # Prepare document IDs for batch processing
         print("🔍 Preparing document IDs for batch processing...")
-        doc_ids = sample_df.select("link").limit(max_docs).collect()
+        doc_ids = sample_df.select("link", "_id").limit(max_docs).collect()
         
         # Initialize tracking variables
         total_entities = 0
@@ -279,34 +222,36 @@ def main():
             df = current_batch.select(
                 col("link").alias("url"),
                 col("textBlock").alias("text"),
-                expr("hex(sha1(link))").alias("uid")  # Generate unique document ID
+                col("_id.oid").alias("doc_id"),  # Use existing MongoDB _id field
+                col("title").alias("title")  # Select the title field
             ).na.fill("")
             
             # Extract entities and process keywords
-            entities = df.select("uid", "url").collect()
+            entities = df.select("doc_id", "url", "title").collect()
             print("🔑 Processing keywords...")
-            postings_list = process_batch(df, neutral_legal_terms)
+            postings_list = process_batch(df)
             
             # Write entities to output file
             with open(entity_output_file, 'a') as f:
                 for entity in entities:
                     entity_doc = {
-                        "id": entity.uid,
-                        "url": entity.url
+                        "id": entity.doc_id,
+                        "url": entity.url,
+                        "title": entity.title  # Include the title in the output
                     }
                     f.write(json.dumps(entity_doc) + '\n')
-                    entity_uids.add(entity.uid)
+                    entity_uids.add(entity.doc_id)
             
             # Write postings to output file
             with open(keyword_output_file, 'a') as f:
                 for posting in postings_list:
                     posting_doc = {
                         "keyword": posting.keyword,
-                        "id": posting.uid,
+                        "id": posting.doc_id,
                         "count": posting["count"]
                     }
                     f.write(json.dumps(posting_doc) + '\n')
-                    posting_uids.add(posting.uid)
+                    posting_uids.add(posting.doc_id)
             
             # Update totals and print batch summary
             total_entities += len(entities)
