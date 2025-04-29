@@ -10,8 +10,11 @@ RUN apt-get update && apt-get install -y mongodb-database-tools
 ENV MONGO_INITDB_DATABASE=lawpy
 
 # Copy initialization scripts
-COPY mongodb-init/01-import-data.sh /docker-entrypoint-initdb.d/
 COPY mongodb-init/02-create-indexes.js /docker-entrypoint-initdb.d/
+COPY mongodb-init/docker-entrypoint-custom.sh /usr/local/bin/
 
-# Make sure the scripts are executable
-RUN chmod +x /docker-entrypoint-initdb.d/01-import-data.sh 
+# Make the custom script executable
+RUN chmod +x /usr/local/bin/docker-entrypoint-custom.sh
+
+# Use custom entrypoint
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint-custom.sh"] 

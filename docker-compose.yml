@@ -9,12 +9,9 @@ services:
     volumes:
       - ./data:/data/import
       - mongodb_data:/data/db
-      - ./mongodb-init:/docker-entrypoint-initdb.d
     networks:
       - lawpy-network
     restart: unless-stopped
-    entrypoint: [ "/usr/local/bin/docker-entrypoint.sh" ]
-    command: "mongod --bind_ip_all"
 
   # Frontend service - commented out for now
   # frontend:
