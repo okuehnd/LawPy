@@ -11,11 +11,16 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-from mongoengine import connect
+import os
+from pymongo import MongoClient
 
-DB = '' 
+# Database name
+DB = 'lawpy'
 
-connect(db=DB, host='localhost',port=27017)
+# Connect to MongoDB - using environment variable to determine if we're in Docker
+MONGODB_HOST = os.environ.get('MONGODB_HOST', 'localhost')
+MONGODB_CLIENT = MongoClient(f'mongodb://{MONGODB_HOST}:27017/')
+MONGODB_DB = MONGODB_CLIENT[DB]
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,7 +35,7 @@ SECRET_KEY = 'django-insecure-%fybnkx&s+==jcyjt9+4abc(xbq4sz^@%i%o-2ti3@j%h)kjn3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']  # Allow all hosts in development
 
 
 # Application definition
@@ -60,6 +65,7 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://localhost:8000",
 ]
 
 ROOT_URLCONF = 'LawPy.urls'
@@ -86,6 +92,7 @@ WSGI_APPLICATION = 'LawPy.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# Using SQLite for Django's internal needs (auth, sessions, etc.)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',

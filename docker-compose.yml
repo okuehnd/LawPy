@@ -13,6 +13,23 @@ services:
       - lawpy-network
     restart: unless-stopped
 
+  django:
+    build:
+      context: ./LawPy
+      dockerfile: Dockerfile
+    container_name: lawpy-django
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./LawPy:/app
+    depends_on:
+      - mongodb
+    networks:
+      - lawpy-network
+    environment:
+      - MONGODB_HOST=mongodb
+    restart: unless-stopped
+
   # Frontend service - commented out for now
   # frontend:
   #   build:
