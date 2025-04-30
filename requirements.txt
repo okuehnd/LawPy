@@ -1,0 +1,7 @@
+# Core dependencies for process_opinions.py
+pyspark==3.5.1
+pymongo==4.6.2  # for bson.ObjectId
+
+# Dependencies for llm-query.py
+openai==1.75.0
+python-dotenv==1.1.0

@@ -1,0 +1,55 @@
+services:
+  mongodb:
+    build:
+      context: .
+      dockerfile: Dockerfile.mongodb
+    container_name: lawpy-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./data:/data/import
+      - mongodb_data:/data/db
+    networks:
+      - lawpy-network
+    restart: unless-stopped
+
+  django:
+    build:
+      context: ./LawPy
+      dockerfile: Dockerfile
+    container_name: lawpy-django
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./LawPy:/app
+    depends_on:
+      - mongodb
+    networks:
+      - lawpy-network
+    environment:
+      - MONGODB_HOST=mongodb
+    restart: unless-stopped
+
+  # Frontend service - commented out for now
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - ./frontend:/app
+  #   depends_on:
+  #     - mongodb
+  #   networks:
+  #     - lawpy-network
+  #   environment:
+  #     - MONGODB_URI=mongodb://mongodb:27017/lawpy
+
+networks:
+  lawpy-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local 

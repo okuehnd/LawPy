@@ -1,0 +1,23 @@
+FROM mongo:latest
+
+# Install MongoDB Database Tools
+RUN apt-get update && apt-get install -y wget gnupg
+RUN wget -qO - https://www.mongodb.org/static/pgp/server-7.0.asc | apt-key add -
+RUN echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+RUN apt-get update && apt-get install -y mongodb-database-tools
+
+# Set up environment
+ENV MONGO_INITDB_DATABASE=lawpy
+
+# Copy initialization scripts
+COPY mongodb-init/02-create-indexes.js /docker-entrypoint-initdb.d/
+COPY mongodb-init/docker-entrypoint-custom.sh /usr/local/bin/
+
+# Make the custom script executable
+RUN chmod +x /usr/local/bin/docker-entrypoint-custom.sh
+
+# Fix Windows line endings
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint-custom.sh
+
+# Use custom entrypoint
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint-custom.sh"] 
