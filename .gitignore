@@ -1,0 +1,15 @@
+#Virtual Environments
+lawvenv/
+venv/
+
+#Databases
+db.sqlite3
+
+#other
+et
+h
+
+data/
+dataBig/
+
+.env
