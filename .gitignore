@@ -1,6 +1,7 @@
 #Virtual Environments
 lawvenv/
 venv/
+.venv/
 
 #Databases
 db.sqlite3
@@ -13,3 +14,11 @@ data/
 dataBig/
 
 .env
+
+#pycache
+*/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
