@@ -28,12 +28,15 @@ logger = logging.getLogger(__name__)
 # @csrf_exempt #add if doesnt work?
 
 
-def connect_to_mongodb(host: str = "mongodb://localhost:27017") -> MongoClient:
+def connect_to_mongodb(host: str = None) -> MongoClient:
     try:
+        if host is None:
+            host = os.environ.get('MONGODB_HOST', 'localhost')
+            host = f"mongodb://{host}:27017"
         client = MongoClient(host)
         # Test the connection
         client.admin.command('ping')
-        print("Successfully connected to MongoDB")
+        print(f"Successfully connected to MongoDB at {host}")
         return client
     except Exception as e:
         print(f"Error connecting to MongoDB: {e}")

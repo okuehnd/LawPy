@@ -28,6 +28,8 @@ services:
       - lawpy-network
     environment:
       - MONGODB_HOST=mongodb
+    env_file:
+      - ./.env
     restart: unless-stopped
 
   # Frontend service - commented out for now
