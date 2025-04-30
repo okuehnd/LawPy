@@ -25,7 +25,7 @@ function QueryPage(){
         }
 
         // Send POST request to the backend to submit the comment
-        fetch('http://localhost:8000/api/TestView', {
+        fetch('http://localhost:8000/api/SubmitQuery', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

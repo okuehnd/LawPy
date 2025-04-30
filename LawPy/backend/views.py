@@ -136,10 +136,32 @@ def search_documents(client: MongoClient, keywords, limit: int = 10, debug: bool
         print(f"Error executing search: {e}")
         raise
 
+"""
+THIS IS WHAT I KEEP GETTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+endpoint called
+Raw response: {
+  "keywords": [
+    "divorce decree",
+    "child custody",
+    "property division",
+    "spousal support",
+    "alimony",
+    "marital assets",
+    "legal separation",
+    "mediation",
+    "court jurisdiction"
+  ]
+}
+Error connecting to MongoDB: localhost:27017: [Errno 111] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 30s, Topology Description: <TopologyDescription id: 6811bb84de6dac5b2ff515cd, topology_type: Unknown, servers: [<ServerDescription ('localhost', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('localhost:27017: [Errno 111] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+Error in main execution: localhost:27017: [Errno 111] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 30s, Topology Description: <TopologyDescription id: 6811bb84de6dac5b2ff515cd, topology_type: Unknown, servers: [<ServerDescription ('localhost', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('localhost:27017: [Errno 111] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+Watching for file changes with StatReloader
+"""
+
 @csrf_exempt
 @api_view(['POST'])
 def SubmitQuery(request):
-    print("endpoint called")
+    logger.debug("endpoint called")
+    print("END POINT CALLED")
     if request.method == 'POST':
         query = request.data.get('query')
         
