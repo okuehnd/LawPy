@@ -13,6 +13,11 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 from pymongo import MongoClient
+from dotenv import load_dotenv
+
+load_dotenv()
+
+OPENAI_API_KEY=os.getenv("OPENAI_API_KEY")
 
 # Database name
 DB = 'lawpy'
@@ -35,7 +40,7 @@ SECRET_KEY = 'django-insecure-%fybnkx&s+==jcyjt9+4abc(xbq4sz^@%i%o-2ti3@j%h)kjn3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']  # Allow all hosts in development
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -66,7 +71,7 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:8000",
-]
+    ]
 
 ROOT_URLCONF = 'LawPy.urls'
 
@@ -92,7 +97,6 @@ WSGI_APPLICATION = 'LawPy.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# Using SQLite for Django's internal needs (auth, sessions, etc.)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -141,3 +145,30 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'backend': {  # This will catch logs from your backend app
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}

@@ -1,33 +1,24 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Virtual Environment
-.env
-.venv
-env/
-venv/
-ENV/
+#Virtual Environments
 lawvenv/
+venv/
+.venv/
 
-# IDE
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db 
-
-# Database
+#Databases
 db.sqlite3
 
-# Data
-data/
-
-# Other
+#other
 et
 h
 
-# unneeded scripts
-scripts/trim_json.py
+data/
+dataBig/
+
+.env
+
+#pycache
+*/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz

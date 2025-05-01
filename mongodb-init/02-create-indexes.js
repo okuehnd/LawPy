@@ -5,8 +5,8 @@
 print("Waiting for MongoDB to be fully ready...");
 sleep(3000); // Wait a bit longer after import to ensure collections are ready
 
-// Function to safely check if a collection exists and create an index
-function createIndexIfCollectionExists(db, collectionName, indexField, indexName) {
+// Function to safely check if a collection exists and create an index if it doesn't already exist
+function createIndexIfNeeded(db, collectionName, indexField, indexName) {
     // List all collections to check if our target exists
     let collections = db.getCollectionNames();
     if (!collections.includes(collectionName)) {
@@ -22,18 +22,33 @@ function createIndexIfCollectionExists(db, collectionName, indexField, indexName
     }
     
     try {
-        print(`Creating index on ${collectionName}.${indexField}...`);
-        let indexSpec = {};
-        indexSpec[indexField] = 1;
+        // First check if the index already exists
+        let existingIndexes = db[collectionName].getIndexes();
+        let indexExists = false;
         
-        db[collectionName].createIndex(
-            indexSpec, 
-            { background: true, name: indexName }
-        );
-        print(`Successfully created index ${indexName} on ${collectionName}.${indexField}`);
+        for (let i = 0; i < existingIndexes.length; i++) {
+            if (existingIndexes[i].name === indexName) {
+                print(`Index ${indexName} already exists on ${collectionName}. Skipping creation.`);
+                indexExists = true;
+                break;
+            }
+        }
+        
+        if (!indexExists) {
+            print(`Creating index on ${collectionName}.${indexField}...`);
+            let indexSpec = {};
+            indexSpec[indexField] = 1;
+            
+            db[collectionName].createIndex(
+                indexSpec, 
+                { background: true, name: indexName }
+            );
+            print(`Successfully created index ${indexName} on ${collectionName}.${indexField}`);
+        }
+        
         return true;
     } catch (error) {
-        print(`Error creating index on ${collectionName}.${indexField}: ${error.message}`);
+        print(`Error with index on ${collectionName}.${indexField}: ${error.message}`);
         return false;
     }
 }
@@ -44,14 +59,14 @@ print("Connected to database: lawpy");
 
 // Create the required indexes
 let results = {
-    keyword_postings_keyword: createIndexIfCollectionExists(
+    keyword_postings_keyword: createIndexIfNeeded(
         db, 
         "keyword_postings", 
         "keyword", 
         "keyword_idx"
     ),
     
-    document_entities_id: createIndexIfCollectionExists(
+    document_entities_id: createIndexIfNeeded(
         db, 
         "document_entities", 
         "id", 
@@ -84,5 +99,5 @@ try {
 
 print("\nIndex creation script completed");
 print("Results summary:");
-print(`- keyword_postings.keyword index: ${results.keyword_postings_keyword ? "Created" : "Failed"}`);
-print(`- document_entities.id index: ${results.document_entities_id ? "Created" : "Failed"}`); 
+print(`- keyword_postings.keyword index: ${results.keyword_postings_keyword ? "Verified" : "Failed"}`);
+print(`- document_entities.id index: ${results.document_entities_id ? "Verified" : "Failed"}`); 
