@@ -164,7 +164,7 @@ def main():
         sample_df = spark.read \
             .option("multiLine", "true") \
             .option("mode", "PERMISSIVE") \
-            .json("data/court_listener_db.opinions.json")
+            .json("data/opinions.json")
             
         print("📊 Data schema:")
         sample_df.printSchema()
@@ -222,7 +222,7 @@ def main():
             df = current_batch.select(
                 col("link").alias("url"),
                 col("textBlock").alias("text"),
-                col("_id.oid").alias("doc_id"),  # Use existing MongoDB _id field
+                col("_id.$oid").alias("doc_id"),  # Use existing MongoDB _id field
                 col("title").alias("title")  # Select the title field
             ).na.fill("")
             
