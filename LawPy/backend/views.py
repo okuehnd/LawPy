@@ -12,6 +12,8 @@ from openai import OpenAI
 import json
 import os
 import logging
+from django.core.paginator import Paginator
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 # from .models import 
@@ -27,7 +29,6 @@ logger = logging.getLogger(__name__)
 
 # @csrf_exempt #add if doesnt work?
 
-
 def connect_to_mongodb(host: str = None) -> MongoClient:
     try:
         if host is None:
@@ -42,7 +43,7 @@ def connect_to_mongodb(host: str = None) -> MongoClient:
         print(f"Error connecting to MongoDB: {e}")
         raise
 
-def search_documents(client: MongoClient, keywords, limit: int = 10, debug: bool = False):
+def search_documents(client: MongoClient, keywords, limit: int = 100000, debug: bool = False):
     try:
         db = client["lawpy"]
         keywords_collection = db["keyword_postings"]
@@ -110,7 +111,7 @@ def search_documents(client: MongoClient, keywords, limit: int = 10, debug: bool
         # Second query to get URLs for the matched document IDs
         url_docs = list(documents_collection.find(
             {"id": {"$in": doc_ids}},
-            {"id": 1, "url": 1, "_id": 0}
+            {"id": 1, "url": 1,"title":1, "_id": 0}
         ))
         
         if debug:
@@ -120,6 +121,7 @@ def search_documents(client: MongoClient, keywords, limit: int = 10, debug: bool
 
         # Create a mapping of document ID to URL
         url_mapping = {doc["id"]: doc["url"] for doc in url_docs}
+        title_mapping = {doc["id"]: doc.get("title","") for doc in url_docs}
 
         # Combine results
         final_results = []
@@ -128,6 +130,7 @@ def search_documents(client: MongoClient, keywords, limit: int = 10, debug: bool
                 final_results.append({
                     "docId": doc["id"],
                     "url": url_mapping[doc["id"]],
+                    "title":title_mapping[doc["id"]],
                     "distinctMatches": doc["distinctMatches"],
                     "totalScore": doc["totalScore"],
                     "matchedKeywords": doc["matchedKeywords"]
@@ -139,32 +142,9 @@ def search_documents(client: MongoClient, keywords, limit: int = 10, debug: bool
         print(f"Error executing search: {e}")
         raise
 
-"""
-THIS IS WHAT I KEEP GETTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-endpoint called
-Raw response: {
-  "keywords": [
-    "divorce decree",
-    "child custody",
-    "property division",
-    "spousal support",
-    "alimony",
-    "marital assets",
-    "legal separation",
-    "mediation",
-    "court jurisdiction"
-  ]
-}
-Error connecting to MongoDB: localhost:27017: [Errno 111] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 30s, Topology Description: <TopologyDescription id: 6811bb84de6dac5b2ff515cd, topology_type: Unknown, servers: [<ServerDescription ('localhost', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('localhost:27017: [Errno 111] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
-Error in main execution: localhost:27017: [Errno 111] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 30s, Topology Description: <TopologyDescription id: 6811bb84de6dac5b2ff515cd, topology_type: Unknown, servers: [<ServerDescription ('localhost', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('localhost:27017: [Errno 111] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
-Watching for file changes with StatReloader
-"""
-
 @csrf_exempt
 @api_view(['POST'])
 def SubmitQuery(request):
-    logger.debug("endpoint called")
-    print("END POINT CALLED")
     if request.method == 'POST':
         query = request.data.get('query')
         
@@ -195,7 +175,7 @@ def SubmitQuery(request):
             )
             # Get the response content
             content = response.choices[0].message.content
-            print(f"Raw response: {content}")
+            # print(f"Raw response: {content}")
             
             # Parse the JSON response
             response_data = json.loads(content)
@@ -234,18 +214,40 @@ def SubmitQuery(request):
                 client.close()
 
         res = []
+        # results =  [{'title': "In re St. Vincent's Services, Inc.", 'url': 'https://www.courtlistener.com/opinion/6356561/in-re-st-vincents-services-inc/', 'matchedKeywords': ['visitation', 'adoption', 'tiffany', 'flexibility', 'custody', 'foster parents']}, {'title': 'Matter of Tatiana R.', 'url': 'https://www.courtlistener.com/opinion/9460427/matter-of-tatiana-r/', 'matchedKeywords': ['visitation', 'adoption', 'flexibility', 'custody', 'foster parents']}, {'title': 'In re the Guardianship & Custody of Terrance G.', 'url': 'https://www.courtlistener.com/opinion/6356335/in-re-the-guardianship-custody-of-terrance-g/', 'matchedKeywords': ['visitation', 'adoption', 'tiffany', 'custody', 'foster parents']}, {'title': 'In re Baby Doe', 'url': 'https://www.courtlistener.com/opinion/6356436/in-re-baby-doe/', 'matchedKeywords': ['visitation', 'foster parents', 'adoption', 'custody', 'child welfare']}, {'title': 'Matter of Baby Doe', 'url': 'https://www.courtlistener.com/opinion/9460118/matter-of-baby-doe/', 'matchedKeywords': ['visitation', 'foster parents', 'adoption', 'custody', 'child welfare']}, {'title': 'Theresa O. v. Arthur P.', 'url': 'https://www.courtlistener.com/opinion/6307049/theresa-o-v-arthur-p/', 'matchedKeywords': ['visitation', 'adoption', 'tiffany', 'custody', 'foster parents']}, {'title': 'Matter of Theresa O v. Arthur P', 'url': 'https://www.courtlistener.com/opinion/9460280/matter-of-theresa-o-v-arthur-p/', 'matchedKeywords': ['visitation', 'adoption', 'tiffany', 'custody', 'foster parents']}, {'title': 'In re Tiffany A.', 'url': 'https://www.courtlistener.com/opinion/6356204/in-re-tiffany-a/', 'matchedKeywords': ['adoption', 'tiffany', 'flexibility', 'custody', 'foster parents']}, {'title': 'In re Jackie B.', 'url': 'https://www.courtlistener.com/opinion/5946325/in-re-jackie-b/', 'matchedKeywords': ['visitation', 'adoption', 'tiffany', 'custody', 'foster parents']}, {'title': 'In re Jackie B.', 'url': 'https://www.courtlistener.com/opinion/5946325/in-re-jackie-b/', 'matchedKeywords': ['visitation', 'adoption', 'tiffany', 'custody', 'foster parents']}]
         for result in results:
             res.append({
                 # 'docId': id,
-                'title' : "Case",
+                'title' : result["title"],
                 'url':result['url'],
+                'matchedKeywords' : result['matchedKeywords']
             })
         
-        print("RESULT ARRAY: ",res)
         if res:
-            return JsonResponse({'message':'Query returned results successfully','results':res},status=200)
-        return JsonResponse({'message' : 'No results','results':res},status = 200)
+            cache.set(f'query_results_{query}',res,timeout=1200)
+            print(f"Query '{query}' results cached.",res)
+            return JsonResponse({'message':'Query returned results successfully'},status=200)
+        return JsonResponse({'message' : 'No results'},status = 200)
     return JsonResponse({'message': 'Invalid request'}, status=400)
+
+def paginated_results(request):
+    query = request.GET.get('query','').lower()
+    page = int(request.GET.get('page',1))
+    limit = int(request.GET.get('limit',10))
+
+    queryResults = cache.get(f'query_results_{query}',[])
+
+    paginator = Paginator(queryResults,limit)
+    page_obj = paginator.get_page(page)
+
+    return JsonResponse({
+        'page': page_obj.number,
+        'totalItems': paginator.count,
+        'totalPages': paginator.num_pages,
+        'items': list(page_obj.object_list),
+    })
+
+
 
 @csrf_exempt
 def TestView(request):

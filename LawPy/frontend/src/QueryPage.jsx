@@ -16,8 +16,9 @@ function QueryPage(){
     const navigate = useNavigate();
     const [error,setError] = useState(null);
 
-    const handleSubmit = () =>{
+    const handleSubmit = (e) =>{
         console.log("Submitting Query:",newQuery);
+        e.preventDefault();
 
         if (!newQuery.trim()) {
             setError('Query cannot be empty!');
@@ -41,7 +42,7 @@ function QueryPage(){
         .then((data) => {
             //naviageto new  page
 
-            navigate('/results', { state: { query: newQuery, results: data.results } });
+            navigate('/results', { state: { query: newQuery, message: data.message } });
         })
         .catch((err) => {
             setError(err.message);
@@ -78,45 +79,52 @@ function QueryPage(){
                     </Typography>
                 </Container>
             </Box>
-            <Box
-                display="flex"
-                flexDirection="column"
-                alignItems="center"
-                justifyContent="center"
-                minHeight="100vh"
-                padding={2}
-            >
-            <TextField
-                label="Enter Your Legal Question"
-                variant="outlined"
-                required
-                value={newQuery}
-                onChange={(e) => setNewQuery(e.target.value)}
-                rows={1}
-                sx={{  width: '50%', marginBottom: '10px' }}
-            />
-            {error && (
-                    <Typography variant="body2" color="error">
-                        {error}
-                    </Typography>
-            )}
-            <Button 
-                variant="contained"
-                color="#a83246"
-                onClick={handleSubmit}
-                sx={{
-                    width: '30%',
-                    maxWidth: 400,
-                    backgroundColor: '#a83246',
-                    color: 'white',
-                    '&:hover': {
-                      backgroundColor: '#8b293a',
-                    },
-                  }}
-            >
-                Submit
-            </Button>
-            </Box>
+            
+            <form onSubmit={handleSubmit}>
+                <Box
+                    sx={{
+                        flexGrow: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 2,
+                      }}
+                >
+                <TextField
+                    label="Enter Your Legal Question"
+                    variant="outlined"
+                    required
+                    value={newQuery}
+                    onChange={(e) => setNewQuery(e.target.value)}
+                    rows={1}
+                    sx={{  width: '50%', marginBottom: '10px' }}
+                />
+                {error && (
+                        <Typography variant="body2" color="error">
+                            {error}
+                        </Typography>
+                )}
+                <Button 
+                    type="submit"
+                    variant="contained"
+                    color="#a83246"
+                    // onClick={handleSubmit}
+                    sx={{
+                        width: '30%',
+                        maxWidth: 400,
+                        backgroundColor: '#a83246',
+                        color: 'white',
+                        '&:hover': {
+                        backgroundColor: '#8b293a',
+                        },
+                    }}
+                >
+                    Submit
+                </Button>
+                </Box>
+            </form>
+            
 
         </div>
     )
