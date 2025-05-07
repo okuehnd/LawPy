@@ -20,66 +20,97 @@ docker compose up -d
 ```
 
 This will:
-- Build the custom MongoDB image with database tools
-- Start a MongoDB container
-- Import your JSON data files into the MongoDB database
-- Create indexes on the collections (this may take some time for larger collections)
+- Build and start MongoDB, Django, and React containers.
+- Import your data into MongoDB (if not already present).
+- Create indexes for fast search.
 
-## Testing the MongoDB Connection
+---
 
-You can connect to the MongoDB instance using the MongoDB shell:
+### 3. Access the App
 
-```bash
-docker exec -it lawpy-mongodb mongosh
-```
+- **Frontend:** [http://localhost:3000](http://localhost:3000)  
+  (React app, main user interface)
+- **Backend API:** [http://localhost:8000](http://localhost:8000)  
+  (Django REST API, see endpoints below)
+- **MongoDB:** Accessible on port 27017 (for admin/debug)
 
-Once connected, you can query the imported collections:
+---
 
-```javascript
-use lawpy
-db.keyword_postings.findOne()
-db.document_entities.findOne()
-```
+## API Endpoints
 
-To check the status of indexes:
+The Django backend exposes two key endpoints (see `backend/urls.py`):
 
-```javascript
-db.keyword_postings.getIndexes()
-db.document_entities.getIndexes()
-```
+- `POST /api/SubmitQuery` — Submit a legal search query (returns results)
+- `GET /api/results/` — Paginated search results
 
-## Collection Details
 
-### keyword_postings
-- Size: 12.2GB
-- Index: `keyword_idx` on the `keyword` field
-- Structure: {keyword, id, count}
-- Purpose: Maps keywords to document IDs and their occurrence counts
-
-### document_entities
-- Size: 21.4MB
-- Index: `id_idx` on the `id` field
-- Structure: Contains document metadata
-- Purpose: Stores document information and relationships
-
-## Adding a Frontend Container
-
-The docker-compose.yml file includes a commented section for adding a frontend service (like Django) in the future. To enable it:
-
-1. Create a frontend directory with your Django application
-2. Uncomment the frontend service section in docker-compose.yml
-3. Build and start the containers with `docker compose up -d`
-
-## Connecting from Frontend to MongoDB
-
-In your Django application, you'll be able to connect to MongoDB using the following connection string:
-
-```
-mongodb://mongodb:27017/lawpy
-```
-
-This uses the Docker service name "mongodb" as the hostname, which enables communication between containers on the same network.
+---
 
 ## Data Persistence
 
-MongoDB data is persisted in a Docker volume named `mongodb_data`. This ensures your data remains available even if the container is stopped or removed. 
+- MongoDB data is stored in a Docker volume named `mongodb_data`.
+- Data will **persist** across container restarts.
+- To remove all data, run:  
+  ```bash
+  docker compose down -v
+  ```
+
+---
+
+## Development Notes
+
+- **Frontend:**  
+  Located in `LawPy/frontend` (React, Create React App, MUI).  
+  Dockerfile builds and serves the static app on port 3000.
+
+- **Backend:**  
+  Located in `LawPy` (Django, DRF, MongoDB via PyMongo/Djongo).  
+  Dockerfile runs Django on port 8000.
+
+- **MongoDB:**  
+  Custom Dockerfile loads data from `/data/import` (mapped from `./data`).  
+  Indexes are created automatically on first run.
+
+---
+
+## Environment Variables
+
+- Backend uses `.env` for secrets (see `docker-compose.yml`).
+- MongoDB host is set via `MONGODB_HOST=mongodb` for internal networking.
+
+---
+
+## Stopping & Cleaning Up
+
+- To stop all containers (but keep data):  
+  ```bash
+  docker compose down
+  ```
+- To stop and **remove all data**:  
+  ```bash
+  docker compose down -v
+  ```
+
+---
+
+## Project Structure
+
+- `data/` — Place your JSON data files here
+- `LawPy/` — Django backend and project root
+- `LawPy/frontend/` — React frontend
+- `mongodb-init/` — MongoDB import and index scripts
+- `docker-compose.yml` — Multi-container orchestration
+
+---
+
+## Troubleshooting
+
+- If you change your data files and want to reload them, remove the volume:
+  ```bash
+  docker compose down -v
+  docker compose up -d
+  ```
+- Check logs with:
+  ```bash
+  docker compose logs -f
+  ``` 
