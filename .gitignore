@@ -22,3 +22,6 @@ dataBig/
 *.pyd
 *.pyw
 *.pyz
+
+.DS_Store
+scripts/trim_json.py

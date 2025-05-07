@@ -1,4 +1,4 @@
-# LawPy MongoDB Container
+# LawPy Docker App
 
 This project sets up a MongoDB container that loads two collections on launch:
 - `keyword_postings.json` (12.2GB) - Contains keyword-document mappings
