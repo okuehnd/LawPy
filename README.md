@@ -1,8 +1,8 @@
 # LawPy Docker App
 
 This project sets up a MongoDB container that loads two collections on launch:
-- `keyword_postings.json` (12.2GB) - Contains keyword-document mappings
-- `document_entities.json` (21.4MB) - Contains document metadata with an index on the `id` field
+- `keyword_postings.json` - Contains keyword-document mappings 
+- `document_entities.json` - Contains document metadata
 
 ## Prerequisites
 
@@ -12,8 +12,9 @@ This project sets up a MongoDB container that loads two collections on launch:
 ## Getting Started
 
 1. Clone this repository
-2. Make sure your data files are in the `./data` directory
-3. Build and start the MongoDB container:
+2. Download the data files from [Google Drive](https://drive.google.com/drive/folders/1fygz3E_k-dcF0OOcQG4MLYW35-a1Gv38)
+3. Make sure your data files are in the `./data` directory 
+4. Build and start the MongoDB container:
 
 ```bash
 docker compose up -d
@@ -113,4 +114,12 @@ The Django backend exposes two key endpoints (see `backend/urls.py`):
 - Check logs with:
   ```bash
   docker compose logs -f
-  ``` 
+  ```
+
+**Note:** On the very first run, loading the data into MongoDB can take several minutes depending on your machine and data size. During this time, the app may not function properly (searches may fail or return incomplete results). You can monitor the progress by checking the logs for the MongoDB container:
+
+```bash
+docker compose logs -f <mongodb_container_name>
+```
+
+Once you see messages indicating the import is complete and the database is ready, the app will be fully functional.
